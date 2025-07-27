@@ -4,97 +4,91 @@ const sheetName = "Página1";
 const query = encodeURIComponent("Select A,B,C");
 const url = `${base}&sheet=${sheetName}&tq=${query}`;
 
-// Usaremos um proxy CORS para evitar bloqueios
-const NOMINATIM_PROXY = "https://cors-anywhere.herokuapp.com/https://nominatim.openstreetmap.org/search";
+// Cache de coordenadas para cidades do RS
+const coordenadasRS = {
+  "Porto Alegre": { lat: -30.0331, lng: -51.23 },
+  "Caxias do Sul": { lat: -29.168, lng: -51.1798 },
+  "Pelotas": { lat: -31.7619, lng: -52.3378 },
+  // Adicione mais cidades conforme necessário
+};
 
 let cities = [];
+let map;
 
-// Função para buscar coordenadas com tratamento de erros
-async function getCoordinates(cityName) {
-  try {
-    const response = await fetch(`${NOMINATIM_PROXY}?city=${encodeURIComponent(cityName)}&state=RS&country=Brazil&format=json`, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data.length > 0 ? { lat: data[0].lat, lon: data[0].lon } : null;
-  } catch (error) {
-    console.error(`Erro ao buscar ${cityName}:`, error);
-    return null;
-  }
-}
-
-// Mapa atualizado com rate limiting
-async function initMap() {
-  const map = L.map('map').setView([-30.5, -53.2], 6.4);
-  
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
-
-  // Adiciona marcadores com delay entre requisições
-  const drawnCities = cities.filter(city => city.desenhada === "Sim");
-  
-  for (let i = 0; i < drawnCities.length; i++) {
-    const city = drawnCities[i];
-    try {
-      const coords = await getCoordinates(city.nome);
-      if (coords) {
-        const marker = L.marker([coords.lat, coords.lon]).addTo(map);
-        marker.bindPopup(`<b>${city.nome}</b><br><a href="${city.link}" target="_blank">Ver desenho</a>`);
-      }
-      // Delay de 1 segundo entre requisições para evitar bloqueio
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error(`Erro ao processar ${city.nome}:`, error);
-    }
-  }
-}
-
-// Carrega os dados
+// Carrega os dados da planilha
 document.addEventListener('DOMContentLoaded', () => {
   fetch(url)
     .then(res => res.text())
     .then(rep => {
       const jsonData = JSON.parse(rep.substr(47).slice(0, -2));
-      jsonData.table.rows.forEach(row => {
-        cities.push({
-          nome: row.c[0]?.v || '',
-          desenhada: row.c[1]?.v || 'Não',
-          link: row.c[2]?.v || '#'
-        });
-      });
+      cities = jsonData.table.rows.map(row => ({
+        nome: row.c[0]?.v || '',
+        desenhada: row.c[1]?.v || 'Não',
+        link: row.c[2]?.v || '#'
+      }));
+      
       setupAutocomplete();
       initMap();
+      addMarkersToMap();
     })
     .catch(err => {
       console.error("Erro ao carregar dados:", err);
       document.getElementById("result").innerHTML = 
-        "⚠️ Erro ao carregar dados. Por favor, recarregue a página.";
+        "⚠️ Erro ao carregar dados. Recarregue a página.";
+      document.getElementById("result").className = "error";
     });
 });
 
-// Configura o autocomplete
+// Configura o autocomplete com filtro por início do texto
 function setupAutocomplete() {
   const input = document.getElementById("cityInput");
   const datalist = document.getElementById("cityList");
-  
-  // Preenche o datalist com todas as cidades
-  cities.forEach(city => {
-    const option = document.createElement("option");
-    option.value = city.nome;
-    datalist.appendChild(option);
-  });
 
-  // Busca dinâmica enquanto digita
   input.addEventListener('input', () => {
-    const value = input.value.toLowerCase();
-    const resultDiv = document.getElementById("result");
-    resultDiv.innerHTML = '';
-    resultDiv.className = '';
+    const searchTerm = input.value.trim().toLowerCase();
+    datalist.innerHTML = '';
+
+    if (searchTerm.length === 0) return;
+
+    // Filtra cidades que COMECAM com o termo (case insensitive)
+    const filteredCities = cities.filter(city => 
+      city.nome.toLowerCase().startsWith(searchTerm)
+    );
+
+    // Ordena alfabeticamente e limita a 20 resultados
+    filteredCities
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+      .slice(0, 20)
+      .forEach(city => {
+        const option = document.createElement("option");
+        option.value = city.nome;
+        datalist.appendChild(option);
+      });
+  });
+}
+
+// Inicializa o mapa
+function initMap() {
+  map = L.map('map').setView([-30.5, -53.2], 6.4);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+}
+
+// Adiciona marcadores para cidades desenhadas
+function addMarkersToMap() {
+  const drawnCities = cities.filter(city => city.desenhada === "Sim");
+  
+  drawnCities.forEach(city => {
+    const coords = coordenadasRS[city.nome];
+    if (coords) {
+      const marker = L.marker([coords.lat, coords.lng]).addTo(map);
+      marker.bindPopup(`
+        <b>${city.nome}</b><br>
+        <a href="${city.link}" target="_blank">Ver desenho</a>
+      `);
+    }
   });
 }
 
@@ -119,36 +113,18 @@ function checkCity() {
       resultDiv.innerHTML = `✅ <strong>${foundCity.nome}</strong> já foi desenhada!<br>
                             <a href="${foundCity.link}" target="_blank">Ver desenho</a>`;
       resultDiv.className = "success";
+      
+      // Centraliza no mapa se existir coordenada
+      const coords = coordenadasRS[foundCity.nome];
+      if (coords) {
+        map.setView([coords.lat, coords.lng], 12);
+      }
     } else {
       resultDiv.innerHTML = `✏️ <strong>${foundCity.nome}</strong> ainda não foi desenhada.`;
       resultDiv.className = "warning";
     }
   } else {
-    resultDiv.innerHTML = `❌ Cidade não encontrada. Verifique se digitou corretamente.`;
+    resultDiv.innerHTML = `❌ Cidade não encontrada. Verifique o nome.`;
     resultDiv.className = "error";
   }
-}
-
-// Mapa
-function initMap() {
-  const map = L.map('map').setView([-30.5, -53.2], 6.4);
-  
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
-
-  // Adiciona marcadores
-  cities.filter(city => city.desenhada === "Sim").forEach(city => {
-    setTimeout(() => {  // Delay para evitar bloqueio do Nominatim
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city.nome)},RS,Brazil`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.length > 0) {
-            const marker = L.marker([data[0].lat, data[0].lon]).addTo(map);
-            marker.bindPopup(`<b>${city.nome}</b><br><a href="${city.link}" target="_blank">Ver desenho</a>`);
-          }
-        })
-        .catch(console.error);
-    }, 100);
-  });
 }
