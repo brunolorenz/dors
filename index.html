@@ -4,14 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Desenhando o RS</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    #map {
+      height: 400px;
+      margin-top: 20px;
+    }
+  </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
   <h1>Desenhando o RS</h1>
   <p>Digite o nome da cidade para ver se já foi desenhada:</p>
-  <input type="text" id="cityInput" placeholder="Ex: Porto Alegre">
+  <input 
+    type="text" 
+    id="cityInput" 
+    placeholder="Ex: Porto Alegre" 
+    list="cityList"
+    autocomplete="off"
+  >
+  <datalist id="cityList"></datalist>
   <button onclick="checkCity()">Buscar</button>
   <div id="result"></div>
   <div id="map"></div>
