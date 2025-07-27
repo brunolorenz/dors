@@ -50,20 +50,20 @@ function setupAutocomplete() {
 
     if (searchTerm.length === 0) return;
 
-    // Filtra cidades que COMECAM com o termo (case insensitive)
+    // Filtro corrigido (startsWith) + apenas cidades do RS
     const filteredCities = cities.filter(city => 
-      city.nome.toLowerCase().startsWith(searchTerm)
+      city.nome.toLowerCase().startsWith(searchTerm) && 
+      city.estado === 'RS' // Adicione uma coluna "estado" na sua planilha
     );
 
-    // Ordena alfabeticamente e limita a 20 resultados
-    filteredCities
-      .sort((a, b) => a.nome.localeCompare(b.nome))
-      .slice(0, 20)
-      .forEach(city => {
-        const option = document.createElement("option");
-        option.value = city.nome;
-        datalist.appendChild(option);
-      });
+    // Ordenação alfabética
+    filteredCities.sort((a, b) => a.nome.localeCompare(b.nome));
+
+    filteredCities.slice(0, 20).forEach(city => {
+      const option = document.createElement("option");
+      option.value = city.nome;
+      datalist.appendChild(option);
+    });
   });
 }
 
