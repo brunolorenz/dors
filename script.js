@@ -6,7 +6,7 @@ const url = `${base}&sheet=${sheetName}&tq=${query}`;
 
 // Configurações
 const config = {
-  delayRequisicoes: 2000, // Delay entre requisições à API (1 segundo)
+  delayRequisicoes: 100, // Delay entre requisições à API (1 segundo)
   zoomPadrao: 12 // Zoom quando seleciona uma cidade
 };
 
