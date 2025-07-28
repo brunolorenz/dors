@@ -9,40 +9,59 @@
 </head>
 <body>
   <div class="container">
-    <h1>Desenhando o RS</h1>
-    
-    <div class="search-container">
-      <input type="text" id="cityInput" placeholder="Ex: Porto Alegre" list="cityList" autocomplete="off">
-      <button onclick="checkCity()">Buscar</button>
-      <datalist id="cityList"></datalist>
-      <!-- Barra de progresso -->
-<div class="progress-container">
-  <div class="progress-bar">
-    <div id="progressBar" class="progress"></div>
-  </div>
-  <span id="progressText">0/0 cidades (0%)</span>
-</div>
+    <header>
+      <h1>Desenhando o RS</h1>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div id="progressBar" class="progress"></div>
+        </div>
+        <span id="progressText">0/0 cidades (0%)</span>
+      </div>
+    </header>
 
-<!-- Container da imagem -->
-<div id="imageContainer">
-  <h3 id="currentCityTitle"></h3>
-  <div id="imageLoader">Carregando imagem...</div>
-  <img id="cityImage" onload="imageLoaded()">
-  
-  <!-- Thumbnails -->
-  <div id="thumbnails" class="thumbnails-container"></div>
-</div>
-    </div>
-    
-    <div id="result"></div>
-    
-    <div id="imageContainer">
-      <div id="imageLoader">Carregando imagem...</div>
-      <img id="cityImage" onload="imageLoaded()">
-      <div id="thumbnails" class="thumbnails-container"></div>
-    </div>
-    
-    <div id="map"></div>
+    <main>
+      <section class="search-section">
+        <p>Digite o nome da cidade para ver se já foi desenhada:</p>
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="cityInput" 
+            placeholder="Ex: Porto Alegre" 
+            list="cityList"
+            autocomplete="off"
+            aria-label="Campo de busca por cidade"
+          >
+          <button onclick="checkCity()" aria-label="Buscar cidade">Buscar</button>
+          <datalist id="cityList"></datalist>
+        </div>
+        <div id="result" class="result-box"></div>
+      </section>
+
+      <section class="image-section">
+        <div id="imageContainer">
+          <h2 id="currentCityTitle"></h2>
+          <div id="imageLoader" class="loader">
+            <div class="spinner"></div>
+            <p>Carregando imagem...</p>
+          </div>
+          <img id="cityImage" alt="Imagem da cidade desenhada" onload="imageLoaded()">
+          
+          <div class="thumbnails-header">
+            <h3>Explore outras cidades desenhadas:</h3>
+          </div>
+          <div id="thumbnails" class="thumbnails-container"></div>
+        </div>
+      </section>
+
+      <section class="map-section">
+        <h3>Mapa das Cidades Desenhadas</h3>
+        <div id="map"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Projeto desenvolvido por [Seu Nome] | © 2025</p>
+    </footer>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
