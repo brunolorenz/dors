@@ -64,7 +64,7 @@ async function addMarkersToMap() {
         const marker = L.marker([coords.lat, coords.lon], {
           icon: L.icon({
             iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png',
-            iconSize: [32, 32]
+            iconSize: [16, 16]
           })
         }).addTo(map);
         
