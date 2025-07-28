@@ -1,4 +1,6 @@
-/* Estilos Gerais */
+/* ==================== */
+/* ESTILOS GERAIS */
+/* ==================== */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f5f5f5;
@@ -22,7 +24,33 @@ h1 {
   margin-bottom: 25px;
 }
 
-/* Campo de Busca */
+/* ==================== */
+/* BARRA DE PROGRESSO */
+/* ==================== */
+.progress-container {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress {
+  height: 100%;
+  background: #4CAF50;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+
+/* ==================== */
+/* CAMPO DE BUSCA */
+/* ==================== */
 .search-container {
   display: flex;
   gap: 12px;
@@ -65,7 +93,9 @@ button:hover {
   transform: translateY(-1px);
 }
 
-/* Resultados */
+/* ==================== */
+/* RESULTADOS */
+/* ==================== */
 #result {
   margin: 25px 0;
   padding: 18px;
@@ -92,22 +122,22 @@ button:hover {
   border-left: 5px solid #f44336;
 }
 
-/* Mapa */
-#map {
-  height: 450px;
-  margin: 25px 0;
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-/* Galeria de Imagens */
+/* ==================== */
+/* GALERIA DE IMAGENS */
+/* ==================== */
 #imageContainer {
   margin: 30px auto;
   max-width: 600px;
   text-align: center;
   display: none;
   animation: fadeIn 0.5s ease;
+}
+
+#currentCityTitle {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 1.5em;
 }
 
 #imageLoader {
@@ -131,88 +161,25 @@ button:hover {
   box-shadow: 0 6px 25px rgba(0,0,0,0.2);
 }
 
-.thumbnail {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  margin: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  border: 3px solid transparent;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.thumbnail:hover {
-  border-color: #3498db;
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.thumbnails-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 20px;
-  gap: 10px;
-}
-
-/* Animações */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsividade */
-@media (max-width: 768px) {
-  .search-container {
-    flex-direction: column;
-  }
-  
-  #cityInput, button {
-    width: 100%;
-  }
-  
-  .thumbnail {
-    width: 100px;
-    height: 100px;
-  }
-}
-
-/* Barra de progresso */
-.progress-container {
-  margin: 20px 0;
+.thumbnails-header h4 {
+  color: #555;
+  margin: 25px 0 15px 0;
+  font-weight: normal;
   text-align: center;
+  font-size: 1.2em;
 }
 
-.progress-bar {
-  width: 100%;
-  height: 20px;
-  background: #f0f0f0;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.progress {
-  height: 100%;
-  background: #4CAF50;
-  width: 0%;
-  transition: width 0.5s ease;
-}
-
-/* Thumbnails */
 .thumbnails-container {
-  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 15px;
 }
 
 .thumbnail-item {
-  display: inline-block;
-  width: 120px;
-  margin: 0 10px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.3s;
+  transition: all 0.3s ease;
 }
 
 .thumbnail-item:hover {
@@ -225,24 +192,65 @@ button:hover {
   object-fit: cover;
   border-radius: 8px;
   border: 2px solid #3498db;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .thumbnail-item p {
-  margin-top: 5px;
+  margin-top: 8px;
   font-size: 14px;
   color: #555;
 }
 
-/* Títulos */
-#currentCityTitle {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 15px;
+/* ==================== */
+/* MAPA */
+/* ==================== */
+#map {
+  height: 450px;
+  margin: 25px 0;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-#thumbnails h4 {
-  color: #555;
-  margin-bottom: 15px;
-  font-weight: normal;
-  text-align: center;
+/* ==================== */
+/* ANIMAÇÕES */
+/* ==================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== */
+/* RESPONSIVIDADE */
+/* ==================== */
+@media (max-width: 768px) {
+  .search-container {
+    flex-direction: column;
+  }
+  
+  #cityInput, button {
+    width: 100%;
+  }
+
+  .thumbnails-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  #map {
+    height: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 15px;
+  }
+
+  .thumbnails-container {
+    grid-template-columns: 1fr;
+  }
+
+  #cityImage {
+    max-height: 300px;
+  }
 }
