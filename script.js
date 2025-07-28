@@ -55,7 +55,7 @@ async function addMarkersToMap() {
   clearMarkers(); // Limpa marcadores antigos
   
   const drawnCities = cities.filter(city => city.desenhada === "Sim");
-  showResult(`🔄 Carregando ${drawnCities.length} cidades...`, 'info');
+  showResult(`🔄 Carregando ${drawnCities.length} cidades já desenhadas`, 'info');
   
   for (const city of drawnCities) {
     try {
