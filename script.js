@@ -9,13 +9,7 @@ const coordenadasRS = {
   "Porto Alegre": { lat: -30.0331, lng: -51.23 },
   "Caxias do Sul": { lat: -29.168, lng: -51.1798 },
   "Pelotas": { lat: -31.7619, lng: -52.3378 },
-  // Adicione mais cidades aqui...
-};
-
-// Configuração
-const config = {
-  usarAPICoordenadas: false, // Altere para true se quiser buscar coordenadas dinamicamente
-  delayRequisicoesAPI: 1000 // Delay entre requisições à API (em ms)
+  // Adicione mais cidades conforme necessário
 };
 
 let cities = [];
@@ -39,11 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => {
       console.error("Erro ao carregar dados:", err);
-      showResult("⚠️ Erro ao carregar dados. Recarregue a página.", "error");
+      document.getElementById("result").innerHTML = 
+        "⚠️ Erro ao carregar dados. Recarregue a página.";
+      document.getElementById("result").className = "error";
     });
 });
 
-// Configura o autocomplete
+// Configura o autocomplete com filtro por início do texto
 function setupAutocomplete() {
   const input = document.getElementById("cityInput");
   const datalist = document.getElementById("cityList");
@@ -54,10 +50,12 @@ function setupAutocomplete() {
 
     if (searchTerm.length === 0) return;
 
+    // Filtra cidades que COMECAM com o termo (case insensitive)
     const filteredCities = cities.filter(city => 
       city.nome.toLowerCase().startsWith(searchTerm)
     );
 
+    // Ordena alfabeticamente e limita a 20 resultados
     filteredCities
       .sort((a, b) => a.nome.localeCompare(b.nome))
       .slice(0, 20)
@@ -78,88 +76,31 @@ function initMap() {
   }).addTo(map);
 }
 
-// Adiciona marcadores (versão aprimorada)
-async function addMarkersToMap() {
+// Adiciona marcadores para cidades desenhadas
+function addMarkersToMap() {
   const drawnCities = cities.filter(city => city.desenhada === "Sim");
-  const missingCoords = [];
-
-  for (const city of drawnCities) {
-    if (!coordenadasRS[city.nome]) {
-      missingCoords.push(city.nome);
-      
-      if (config.usarAPICoordenadas) {
-        try {
-          const coords = await fetchCoordinates(city.nome);
-          if (coords) {
-            coordenadasRS[city.nome] = coords;
-            addMarkerToMap(city);
-          }
-        } catch (error) {
-          console.error(`Falha ao buscar ${city.nome}:`, error);
-        }
-      }
-    } else {
-      addMarkerToMap(city);
-    }
-  }
-
-  // Log de cidades sem coordenadas
-  if (missingCoords.length > 0) {
-    console.group("Cidades desenhadas sem coordenadas:");
-    console.table(missingCoords);
-    console.groupEnd();
-    
-    if (!config.usarAPICoordenadas) {
-      console.info("Dica: Ative config.usarAPICoordenadas para busca automática");
-    }
-  }
-}
-
-// Função auxiliar para adicionar marcador
-function addMarkerToMap(city) {
-  const coords = coordenadasRS[city.nome];
-  if (!coords) return;
-
-  const marker = L.marker([coords.lat, coords.lng], {
-    icon: L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png',
-      iconSize: [32, 32]
-    })
-  }).addTo(map);
-
-  marker.bindPopup(`
-    <b>${city.nome}</b><br>
-    <a href="${city.link}" target="_blank">Ver desenho</a>
-  `);
-}
-
-// Busca coordenadas via API (opcional)
-async function fetchCoordinates(cityName) {
-  if (!config.usarAPICoordenadas) return null;
   
-  try {
-    await new Promise(resolve => setTimeout(resolve, config.delayRequisicoesAPI));
-    
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName + ', RS, Brasil')}&format=json`
-    );
-    
-    const data = await response.json();
-    return data[0] ? { lat: data[0].lat, lng: data[0].lon } : null;
-  } catch (error) {
-    console.error(`Erro na API para ${cityName}:`, error);
-    return null;
-  }
+  drawnCities.forEach(city => {
+    const coords = coordenadasRS[city.nome];
+    if (coords) {
+      const marker = L.marker([coords.lat, coords.lng]).addTo(map);
+      marker.bindPopup(`
+        <b>${city.nome}</b><br>
+        <a href="${city.link}" target="_blank">Ver desenho</a>
+      `);
+    }
+  });
 }
 
-// Função de busca com feedback
+// Função de busca
 function checkCity() {
   const input = document.getElementById("cityInput");
   const cityName = input.value.trim();
   const resultDiv = document.getElementById("result");
 
   if (!cityName) {
-    showResult("Por favor, digite o nome de uma cidade.", "error");
+    resultDiv.innerHTML = "Por favor, digite o nome de uma cidade.";
+    resultDiv.className = "error";
     return;
   }
 
@@ -167,33 +108,23 @@ function checkCity() {
     c.nome.toLowerCase() === cityName.toLowerCase()
   );
 
-  if (!foundCity) {
-    showResult("❌ Cidade não encontrada. Verifique o nome.", "error");
-    return;
-  }
-
-  if (foundCity.desenhada === "Sim") {
-    showResult(
-      `✅ <strong>${foundCity.nome}</strong> já foi desenhada!<br>
-      <a href="${foundCity.link}" target="_blank">Ver desenho</a>`,
-      "success"
-    );
-    centerMapOnCity(foundCity.nome);
+  if (foundCity) {
+    if (foundCity.desenhada === "Sim") {
+      resultDiv.innerHTML = `✅ <strong>${foundCity.nome}</strong> já foi desenhada!<br>
+                            <a href="${foundCity.link}" target="_blank">Ver desenho</a>`;
+      resultDiv.className = "success";
+      
+      // Centraliza no mapa se existir coordenada
+      const coords = coordenadasRS[foundCity.nome];
+      if (coords) {
+        map.setView([coords.lat, coords.lng], 12);
+      }
+    } else {
+      resultDiv.innerHTML = `✏️ <strong>${foundCity.nome}</strong> ainda não foi desenhada.`;
+      resultDiv.className = "warning";
+    }
   } else {
-    showResult(`✏️ <strong>${foundCity.nome}</strong> ainda não foi desenhada.`, "warning");
-  }
-}
-
-// Funções auxiliares
-function showResult(message, type) {
-  const resultDiv = document.getElementById("result");
-  resultDiv.innerHTML = message;
-  resultDiv.className = type;
-}
-
-function centerMapOnCity(cityName) {
-  const coords = coordenadasRS[cityName];
-  if (coords) {
-    map.setView([coords.lat, coords.lng], 12);
+    resultDiv.innerHTML = `❌ Cidade não encontrada. Verifique o nome.`;
+    resultDiv.className = "error";
   }
 }
