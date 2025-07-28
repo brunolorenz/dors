@@ -1,3 +1,4 @@
+// Configurações
 const sheetID = "177led-vdMhTNiNfxUT97OzAKbJh8hgXiOrKslwM0oFA";
 const base = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?`;
 const sheetName = "Página1";
@@ -5,26 +6,29 @@ const query = encodeURIComponent("Select A,B,C");
 const url = `${base}&sheet=${sheetName}&tq=${query}`;
 
 const config = {
-  delayRequisicoes: 1000,
+  delayRequisicoes: 100,
   zoomPadrao: 12,
-  maxThumbnails: 6
+  maxThumbnails: 3
 };
 
+// Variáveis globais
 let cities = [];
 let map;
 let markers = [];
+let currentCity = null;
 let loadedImages = {};
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
   loadData();
+  setupEventListeners();
 });
 
-// Carrega dados
+// Carrega dados da planilha
 async function loadData() {
   try {
-    showResult("🔄 Carregando dados...", "info");
+    showResult("🔄 Carregando dados das cidades...", "info");
     const response = await fetch(url);
     const rep = await response.text();
     const jsonData = JSON.parse(rep.substr(47).slice(0, -2));
@@ -38,13 +42,14 @@ async function loadData() {
     setupAutocomplete();
     preloadImages();
     addMarkersToMap();
+    updateProgress(); // Atualiza barra de progresso inicial
   } catch (err) {
-    console.error("Erro:", err);
-    showResult("⚠️ Erro ao carregar dados. Recarregue a página.", "error");
+    console.error("Erro ao carregar dados:", err);
+    showResult("⚠️ Falha ao carregar dados. Recarregue a página.", "error");
   }
 }
 
-// Pré-carrega imagens
+// Pré-carrega imagens para melhor performance
 function preloadImages() {
   cities.filter(c => c.desenhada === "Sim" && c.link).forEach(city => {
     const img = new Image();
@@ -53,7 +58,7 @@ function preloadImages() {
   });
 }
 
-// Configura o mapa
+// Configura o mapa Leaflet
 function initMap() {
   map = L.map('map').setView([-30.5, -53.2], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -61,12 +66,12 @@ function initMap() {
   }).addTo(map);
 }
 
-// Adiciona marcadores
+// Adiciona marcadores no mapa
 async function addMarkersToMap() {
   clearMarkers();
   const drawnCities = cities.filter(c => c.desenhada === "Sim");
   
-  showResult(`🔄 Carregando ${drawnCities.length} cidades...`, "info");
+  showResult(`🔄 Carregando ${drawnCities.length} cidades no mapa...`, "info");
   
   for (const city of drawnCities) {
     try {
@@ -80,27 +85,30 @@ async function addMarkersToMap() {
         }).addTo(map);
         
         marker.bindPopup(createPopupContent(city));
+        marker.on('click', () => showCityImage(city.nome));
         markers.push(marker);
       }
       await new Promise(resolve => setTimeout(resolve, config.delayRequisicoes));
     } catch (error) {
-      console.error(`Erro em ${city.nome}:`, error);
+      console.error(`Erro ao processar ${city.nome}:`, error);
     }
   }
   
-  showResult(`✅ ${markers.length} cidades carregadas`, "success");
+  showResult(`✅ ${markers.length} cidades carregadas no mapa`, "success");
   if (markers.length > 0) {
     map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [50, 50] });
   }
 }
 
-// Cria conteúdo do popup
+// Cria conteúdo para os popups do mapa
 function createPopupContent(city) {
   return `
     <b>${city.nome}</b>
     ${city.link ? `
-      <div style="margin-top:10px">
-        <img src="${city.link}" class="thumbnail" onclick="showCityImage('${city.nome}')">
+      <div style="margin-top:8px">
+        <img src="${city.link}" 
+             style="width:100px;height:100px;object-fit:cover;cursor:pointer" 
+             onclick="showCityImage('${city.nome}')">
       </div>
     ` : ''}
   `;
@@ -108,73 +116,84 @@ function createPopupContent(city) {
 
 // Mostra imagem principal
 function showCityImage(cityName) {
-  const city = cities.find(c => c.nome === cityName);
-  if (!city?.link) return;
-  
-  const imageContainer = document.getElementById("imageContainer");
+  currentCity = cities.find(c => c.nome === cityName);
+  if (!currentCity?.link) return;
+
   const cityImage = document.getElementById("cityImage");
   const imageLoader = document.getElementById("imageLoader");
-  const thumbnails = document.getElementById("thumbnails");
+  
+  // Atualiza interface
+  document.getElementById("cityInput").value = currentCity.nome;
+  document.getElementById("currentCityTitle").textContent = currentCity.nome;
   
   imageLoader.style.display = 'block';
   cityImage.style.opacity = '0';
-  imageContainer.style.display = 'block';
+  document.getElementById("imageContainer").style.display = 'block';
   
   cityImage.onload = function() {
     imageLoaded();
     centerOnCity(cityName);
+    updateProgress();
   };
   
-  cityImage.src = city.link;
+  cityImage.src = currentCity.link;
   cityImage.alt = `Desenho de ${cityName}`;
   
-  // Atualiza miniaturas
-  updateThumbnails(cityName);
+  updateThumbnails();
 }
 
-// Atualiza miniaturas
-function updateThumbnails(currentCity) {
-  const thumbnails = document.getElementById("thumbnails");
-  thumbnails.innerHTML = '';
+// Atualiza thumbnails
+function updateThumbnails() {
+  const thumbnailsContainer = document.getElementById("thumbnails");
+  thumbnailsContainer.innerHTML = '<h4>Explore outras cidades desenhadas:</h4>';
   
-  const drawnCities = cities
-    .filter(c => c.desenhada === "Sim" && c.link && c.nome !== currentCity)
+  // Seleciona cidades aleatórias, exceto a atual
+  const otherCities = cities
+    .filter(c => c.desenhada === "Sim" && c.nome !== currentCity?.nome && c.link)
+    .sort(() => Math.random() - 0.5)
     .slice(0, config.maxThumbnails);
   
-  drawnCities.forEach(city => {
-    const thumb = document.createElement('img');
-    thumb.src = city.link;
-    thumb.alt = city.nome;
-    thumb.className = 'thumbnail';
-    thumb.onclick = () => showCityImage(city.nome);
-    thumbnails.appendChild(thumb);
+  otherCities.forEach(city => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumbnail-item';
+    thumb.innerHTML = `
+      <img src="${city.link}" alt="${city.nome}" 
+           onclick="showCityImage('${city.nome}')">
+      <p>${city.nome}</p>
+    `;
+    thumbnailsContainer.appendChild(thumb);
   });
 }
 
-// Quando imagem carrega
-function imageLoaded() {
-  const cityImage = document.getElementById("cityImage");
-  const imageLoader = document.getElementById("imageLoader");
+// Atualiza barra de progresso
+function updateProgress() {
+  const drawnCount = cities.filter(c => c.desenhada === "Sim").length;
+  const total = cities.length;
+  const percent = Math.round((drawnCount / total) * 100);
   
-  cityImage.style.opacity = '1';
-  imageLoader.style.display = 'none';
+  document.getElementById("progressBar").style.width = `${percent}%`;
+  document.getElementById("progressText").textContent = 
+    `${drawnCount}/${total} cidades (${percent}%)`;
 }
 
-// Busca coordenadas
+// Busca coordenadas via API
 async function fetchCoordinates(cityName) {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName + ', RS, Brasil')}&format=json`
     );
     const data = await response.json();
-    return data[0] ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null;
+    return data[0] ? { 
+      lat: parseFloat(data[0].lat), 
+      lon: parseFloat(data[0].lon) 
+    } : null;
   } catch (error) {
-    console.error(`Erro ao buscar ${cityName}:`, error);
+    console.error(`Erro ao buscar coordenadas para ${cityName}:`, error);
     return null;
   }
 }
 
-// Autocomplete
+// Configura autocomplete
 function setupAutocomplete() {
   const input = document.getElementById("cityInput");
   const datalist = document.getElementById("cityList");
@@ -197,7 +216,7 @@ function setupAutocomplete() {
   });
 }
 
-// Função de busca
+// Função de busca principal
 function checkCity() {
   const input = document.getElementById("cityInput");
   const cityName = input.value.trim();
@@ -227,11 +246,6 @@ function checkCity() {
   }
 }
 
-// Esconde a área de imagem
-function hideImageContainer() {
-  document.getElementById("imageContainer").style.display = 'none';
-}
-
 // Centraliza no mapa
 async function centerOnCity(cityName) {
   const coords = await fetchCoordinates(cityName);
@@ -246,9 +260,30 @@ function clearMarkers() {
   markers = [];
 }
 
-// Exibe mensagens
+// Esconde container de imagem
+function hideImageContainer() {
+  document.getElementById("imageContainer").style.display = 'none';
+}
+
+// Quando imagem carrega
+function imageLoaded() {
+  const cityImage = document.getElementById("cityImage");
+  const imageLoader = document.getElementById("imageLoader");
+  
+  cityImage.style.opacity = '1';
+  imageLoader.style.display = 'none';
+}
+
+// Mostra mensagens
 function showResult(message, type) {
   const resultDiv = document.getElementById("result");
   resultDiv.innerHTML = message;
   resultDiv.className = type;
+}
+
+// Configura listeners
+function setupEventListeners() {
+  document.getElementById("cityInput").addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') checkCity();
+  });
 }
