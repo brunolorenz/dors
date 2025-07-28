@@ -146,7 +146,7 @@ function showCityImage(cityName) {
 function updateThumbnails() {
   const thumbnailsContainer = document.getElementById("thumbnails");
   // Sempre limpa as thumbnails existentes completamente
-  thumbnailsContainer.innerHTML = '<h4>Explore outras cidades desenhadas:</h4>';
+  thumbnailsContainer.innerHTML = '';
   
   // Filtra cidades desenhadas, exceto a atual
   const otherCities = cities
