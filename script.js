@@ -4,15 +4,16 @@ const sheetName = "Página1";
 const query = encodeURIComponent("Select A,B,C");
 const url = `${base}&sheet=${sheetName}&tq=${query}`;
 
-// Configurações
 const config = {
-  delayRequisicoes: 10, // Delay entre requisições à API (1 segundo)
-  zoomPadrao: 12 // Zoom quando seleciona uma cidade
+  delayRequisicoes: 1000,
+  zoomPadrao: 12,
+  maxThumbnails: 6
 };
 
 let cities = [];
 let map;
-let markers = []; // Armazena todos os marcadores
+let markers = [];
+let loadedImages = {};
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,9 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
 });
 
-// Carrega dados da planilha
+// Carrega dados
 async function loadData() {
   try {
+    showResult("🔄 Carregando dados...", "info");
     const response = await fetch(url);
     const rep = await response.text();
     const jsonData = JSON.parse(rep.substr(47).slice(0, -2));
@@ -30,32 +32,41 @@ async function loadData() {
     cities = jsonData.table.rows.map(row => ({
       nome: row.c[0]?.v || '',
       desenhada: row.c[1]?.v || 'Não',
-      link: row.c[2]?.v || '#'
+      link: row.c[2]?.v || ''
     }));
     
     setupAutocomplete();
-    addMarkersToMap(); // Mostra automaticamente as cidades desenhadas
+    preloadImages();
+    addMarkersToMap();
   } catch (err) {
-    console.error("Erro ao carregar dados:", err);
+    console.error("Erro:", err);
     showResult("⚠️ Erro ao carregar dados. Recarregue a página.", "error");
   }
 }
 
+// Pré-carrega imagens
+function preloadImages() {
+  cities.filter(c => c.desenhada === "Sim" && c.link).forEach(city => {
+    const img = new Image();
+    img.src = city.link;
+    loadedImages[city.nome] = img;
+  });
+}
+
 // Configura o mapa
 function initMap() {
-  map = L.map('map').setView([-30.5, -53.2], 6); // Vista geral do RS
-  
+  map = L.map('map').setView([-30.5, -53.2], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
 }
 
-// Adiciona marcadores automaticamente
+// Adiciona marcadores
 async function addMarkersToMap() {
-  clearMarkers(); // Limpa marcadores antigos
+  clearMarkers();
+  const drawnCities = cities.filter(c => c.desenhada === "Sim");
   
-  const drawnCities = cities.filter(city => city.desenhada === "Sim");
-  showResult(`🔄 Carregando ${drawnCities.length} cidades já desenhadas`, 'info');
+  showResult(`🔄 Carregando ${drawnCities.length} cidades...`, "info");
   
   for (const city of drawnCities) {
     try {
@@ -64,47 +75,103 @@ async function addMarkersToMap() {
         const marker = L.marker([coords.lat, coords.lon], {
           icon: L.icon({
             iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png',
-            iconSize: [16, 16]
+            iconSize: [24, 24]
           })
         }).addTo(map);
         
-        marker.bindPopup(`
-          <b>${city.nome}</b><br>
-          ${city.link ? `<a href="${city.link}" target="_blank">Ver desenho</a>` : ''}
-        `);
-        
+        marker.bindPopup(createPopupContent(city));
         markers.push(marker);
       }
       await new Promise(resolve => setTimeout(resolve, config.delayRequisicoes));
     } catch (error) {
-      console.error(`Erro ao processar ${city.nome}:`, error);
+      console.error(`Erro em ${city.nome}:`, error);
     }
   }
   
-  showResult(`✅ ${markers.length} cidades desenhadas carregadas`, 'success');
+  showResult(`✅ ${markers.length} cidades carregadas`, "success");
   if (markers.length > 0) {
     map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [50, 50] });
   }
 }
 
-// Busca coordenadas via Nominatim
+// Cria conteúdo do popup
+function createPopupContent(city) {
+  return `
+    <b>${city.nome}</b>
+    ${city.link ? `
+      <div style="margin-top:10px">
+        <img src="${city.link}" class="thumbnail" onclick="showCityImage('${city.nome}')">
+      </div>
+    ` : ''}
+  `;
+}
+
+// Mostra imagem principal
+function showCityImage(cityName) {
+  const city = cities.find(c => c.nome === cityName);
+  if (!city?.link) return;
+  
+  const imageContainer = document.getElementById("imageContainer");
+  const cityImage = document.getElementById("cityImage");
+  const imageLoader = document.getElementById("imageLoader");
+  const thumbnails = document.getElementById("thumbnails");
+  
+  imageLoader.style.display = 'block';
+  cityImage.style.opacity = '0';
+  imageContainer.style.display = 'block';
+  
+  cityImage.onload = function() {
+    imageLoaded();
+    centerOnCity(cityName);
+  };
+  
+  cityImage.src = city.link;
+  cityImage.alt = `Desenho de ${cityName}`;
+  
+  // Atualiza miniaturas
+  updateThumbnails(cityName);
+}
+
+// Atualiza miniaturas
+function updateThumbnails(currentCity) {
+  const thumbnails = document.getElementById("thumbnails");
+  thumbnails.innerHTML = '';
+  
+  const drawnCities = cities
+    .filter(c => c.desenhada === "Sim" && c.link && c.nome !== currentCity)
+    .slice(0, config.maxThumbnails);
+  
+  drawnCities.forEach(city => {
+    const thumb = document.createElement('img');
+    thumb.src = city.link;
+    thumb.alt = city.nome;
+    thumb.className = 'thumbnail';
+    thumb.onclick = () => showCityImage(city.nome);
+    thumbnails.appendChild(thumb);
+  });
+}
+
+// Quando imagem carrega
+function imageLoaded() {
+  const cityImage = document.getElementById("cityImage");
+  const imageLoader = document.getElementById("imageLoader");
+  
+  cityImage.style.opacity = '1';
+  imageLoader.style.display = 'none';
+}
+
+// Busca coordenadas
 async function fetchCoordinates(cityName) {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName + ', RS, Brasil')}&format=json`
     );
     const data = await response.json();
-    return data[0] ? { lat: data[0].lat, lon: data[0].lon } : null;
+    return data[0] ? { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) } : null;
   } catch (error) {
     console.error(`Erro ao buscar ${cityName}:`, error);
     return null;
   }
-}
-
-// Limpa marcadores
-function clearMarkers() {
-  markers.forEach(marker => map.removeLayer(marker));
-  markers = [];
 }
 
 // Autocomplete
@@ -116,7 +183,7 @@ function setupAutocomplete() {
     const searchTerm = input.value.trim().toLowerCase();
     datalist.innerHTML = '';
 
-    if (searchTerm.length === 0) return;
+    if (searchTerm.length < 2) return;
 
     cities
       .filter(city => city.nome.toLowerCase().startsWith(searchTerm))
@@ -137,6 +204,7 @@ function checkCity() {
 
   if (!cityName) {
     showResult("Por favor, digite o nome de uma cidade.", "error");
+    hideImageContainer();
     return;
   }
 
@@ -146,18 +214,22 @@ function checkCity() {
 
   if (!foundCity) {
     showResult("❌ Cidade não encontrada. Verifique o nome.", "error");
+    hideImageContainer();
     return;
   }
 
   if (foundCity.desenhada === "Sim") {
-    showResult(
-      `✅ <strong>${foundCity.nome}</strong> já foi desenhada!`,
-      "success"
-    );
-    centerOnCity(foundCity.nome);
+    showResult(`✅ <strong>${foundCity.nome}</strong> já foi desenhada!`, "success");
+    showCityImage(foundCity.nome);
   } else {
     showResult(`✏️ <strong>${foundCity.nome}</strong> ainda não foi desenhada.`, "warning");
+    hideImageContainer();
   }
+}
+
+// Esconde a área de imagem
+function hideImageContainer() {
+  document.getElementById("imageContainer").style.display = 'none';
 }
 
 // Centraliza no mapa
@@ -166,6 +238,12 @@ async function centerOnCity(cityName) {
   if (coords) {
     map.setView([coords.lat, coords.lon], config.zoomPadrao);
   }
+}
+
+// Limpa marcadores
+function clearMarkers() {
+  markers.forEach(marker => map.removeLayer(marker));
+  markers = [];
 }
 
 // Exibe mensagens
