@@ -145,13 +145,16 @@ function showCityImage(cityName) {
 // Atualiza thumbnails
 function updateThumbnails() {
   const thumbnailsContainer = document.getElementById("thumbnails");
+  // Sempre limpa as thumbnails existentes completamente
+  thumbnailsContainer.innerHTML = '<h4>Explore outras cidades desenhadas:</h4>';
   
-  // Seleciona cidades aleatórias, exceto a atual
+  // Filtra cidades desenhadas, exceto a atual
   const otherCities = cities
     .filter(c => c.desenhada === "Sim" && c.nome !== currentCity?.nome && c.link)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, config.maxThumbnails);
-  
+    .sort(() => Math.random() - 0.5) // Embaralha
+    .slice(0, config.maxThumbnails); // Pega apenas as 3 primeiras
+
+  // Adiciona as novas thumbnails
   otherCities.forEach(city => {
     const thumb = document.createElement('div');
     thumb.className = 'thumbnail-item';
