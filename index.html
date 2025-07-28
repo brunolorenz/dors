@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Desenhando o RS</title>
-  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
@@ -16,7 +15,7 @@
       <input 
         type="text" 
         id="cityInput" 
-        placeholder="Nome da cidade"
+        placeholder="Ex: Porto Alegre" 
         list="cityList"
         autocomplete="off"
       >
@@ -25,6 +24,13 @@
     </div>
     
     <div id="result"></div>
+    
+    <div id="imageContainer">
+      <div id="imageLoader">Carregando imagem...</div>
+      <img id="cityImage" onload="imageLoaded()">
+      <div id="thumbnails" class="thumbnails-container"></div>
+    </div>
+    
     <div id="map"></div>
   </div>
 
