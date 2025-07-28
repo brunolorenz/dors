@@ -88,3 +88,105 @@ button:hover {
   border-radius: 8px;
   border: 1px solid #ddd;
 }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+    }
+    .search-container {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    #cityInput {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #3498db;
+      border-radius: 4px;
+    }
+    button {
+      padding: 12px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    #result {
+      margin: 15px 0;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .success {
+      background: #e8f5e9;
+      border-left: 4px solid #4CAF50;
+    }
+    .warning {
+      background: #fff3e0;
+      border-left: 4px solid #FFC107;
+    }
+    .error {
+      background: #ffebee;
+      border-left: 4px solid #F44336;
+    }
+    #map {
+      height: 400px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    #imageContainer {
+      margin: 20px auto;
+      max-width: 500px;
+      text-align: center;
+      display: none;
+    }
+    #imageLoader {
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+    }
+    #cityImage {
+      max-width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+      border: 1px solid #eee;
+      transition: opacity 0.3s;
+    }
+    .thumbnail {
+      max-width: 150px;
+      max-height: 150px;
+      margin: 5px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+    }
+    .thumbnail:hover {
+      border-color: #3498db;
+    }
+    .thumbnails-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 15px;
+    }
+  
