@@ -145,7 +145,6 @@ function showCityImage(cityName) {
 // Atualiza thumbnails
 function updateThumbnails() {
   const thumbnailsContainer = document.getElementById("thumbnails");
-  thumbnailsContainer.innerHTML = '<h4>Explore outras cidades desenhadas:</h4>';
   
   // Seleciona cidades aleatórias, exceto a atual
   const otherCities = cities
