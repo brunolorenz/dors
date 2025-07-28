@@ -9,6 +9,7 @@
 </head>
 <body>
   <div class="container">
+    <!-- Cabeçalho com título e progresso -->
     <header>
       <h1>Desenhando o RS</h1>
       <div class="progress-container">
@@ -19,45 +20,50 @@
       </div>
     </header>
 
-    <main>
-      <section class="search-section">
-        <p>Digite o nome da cidade para ver se já foi desenhada:</p>
-        <div class="search-box">
-          <input 
-            type="text" 
-            id="cityInput" 
-            placeholder="Ex: Porto Alegre" 
-            list="cityList"
-            autocomplete="off"
-            aria-label="Campo de busca por cidade"
-          >
-          <button onclick="checkCity()" aria-label="Buscar cidade">Buscar</button>
-          <datalist id="cityList"></datalist>
-        </div>
-        <div id="result" class="result-box"></div>
-      </section>
+    <!-- Seção de Busca (agora no topo) -->
+    <section class="search-section">
+      <div class="search-box">
+        <input 
+          type="text" 
+          id="cityInput" 
+          placeholder="Digite o nome da cidade (Ex: Porto Alegre)" 
+          list="cityList"
+          autocomplete="off"
+          aria-label="Campo de busca por cidade"
+        >
+        <button onclick="checkCity()" aria-label="Buscar cidade">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+          </svg>
+          Buscar
+        </button>
+        <datalist id="cityList"></datalist>
+      </div>
+      <div id="result" class="result-box"></div>
+    </section>
 
-      <section class="image-section">
-        <div id="imageContainer">
-          <h2 id="currentCityTitle"></h2>
-          <div id="imageLoader" class="loader">
-            <div class="spinner"></div>
-            <p>Carregando imagem...</p>
-          </div>
-          <img id="cityImage" alt="Imagem da cidade desenhada" onload="imageLoaded()">
-          
-          <div class="thumbnails-header">
-            <h3>Explore outras cidades desenhadas:</h3>
-          </div>
-          <div id="thumbnails" class="thumbnails-container"></div>
+    <!-- Seção de Imagem (abaixo do campo de busca) -->
+    <section class="content-section">
+      <div id="imageContainer">
+        <h2 id="currentCityTitle"></h2>
+        <div id="imageLoader" class="loader">
+          <div class="spinner"></div>
+          <p>Carregando desenho...</p>
         </div>
-      </section>
+        <img id="cityImage" alt="Imagem da cidade desenhada" onload="imageLoaded()">
+        
+        <div class="thumbnails-header">
+          <h3>Explore outras cidades desenhadas:</h3>
+        </div>
+        <div id="thumbnails" class="thumbnails-container"></div>
+      </div>
 
-      <section class="map-section">
+      <!-- Mapa -->
+      <div class="map-container">
         <h3>Mapa das Cidades Desenhadas</h3>
         <div id="map"></div>
-      </section>
-    </main>
+      </div>
+    </section>
 
     <footer>
       <p>Projeto desenvolvido por [Seu Nome] | © 2025</p>
